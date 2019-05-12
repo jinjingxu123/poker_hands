@@ -1,68 +1,57 @@
-#### 要求和条件
-- 给定任意两组牌, 每组5张, 能够输出两组牌的牌面及比较的结果.
-- 使用52张扑克, 分为四个花色(将红桃, 方块, 黑桃, 梅花简化为A, B, C, D), 每个花色13张牌, 数字从2到14(将J, Q, K, A简化为11, 12, 13, 14).
-
-#### 规则
-1. 都是散牌的话, 比较各自五张牌中数字最大的
-    - **例1: "B11, A2, A9, D10, A8" < "D4, A8, C5, C6, B12"**
-
-2. 对子(两张牌数字相同)大于散牌
-    - **例2: "B14, A3, A9, D10, A8" < "D4, A2, C2, C6, B11"**
-
-3. 都有对子则比较对子之间大小
-    - **例3: "B11, A9, D9, D5, A8" < "D4, B10, C10, C6, B12"**
-
-4. 顺子(五张牌数字连续)大于对子
-    - **例4: "D2, B2, C10, A10, B12" < "D5, A6, C7, C8, B9"**
-
-#### 关于德州扑克
-- 规则和术语(下列**牌型按照从大到小排列**, 下面的设计思路将采用这些**术语**命名)
-    - 皇家同花顺(royal flush): 由AKQJ10五张组成, 并且这5张牌花色相同
-    - 同花顺(straight flush): 由五张连张同花色的牌组成
-    - 4条(four of the kind): 4张同点值的牌加上一张其他任何牌
-    - 葫芦(full house): 3张同点值加上另外一对
-    - 同花(flush): 5张牌花色相同, 但是不成顺子
-    - 顺子(straight): 五张牌连张, 至少一张花色不同
-    - 3条(three of the kind): 三张牌点值相同, 其他两张各异
-    - 两对(two pairs): 两对加上一个杂牌
-    - 一对(one pair): 一对加上3张杂牌
-    - 高牌(high card): 不符合上面任何一种牌型的牌型，由单牌且不连续不同花的组成
-
-#### 设计思路
-1. 总则: 拿到5张牌, **先比较牌型, 如果牌型相同, 再根据牌型比较大小即可**
-2. 由于上述要求只有四个, 但是实际上德州扑克的牌型包含了**10种**, 因此我扩展了全部的规则, 避免在出现类似**葫芦**这种牌型的时候被当做**高牌**处理
-3. 为了使整个系统更加完善, 避免直接数据运行, 抽象出如下几个角色:
-    - Poker: 代表一副扑克, 包含`发牌`动作
-    - Dealer: 荷官, 系统的主导者, 负责`发牌`, `计算玩家牌型比较`等
-    - Player: 玩家, 持有`5张牌`及其`牌型结果`对象等, 该类实现`Comparable`作为内部排序, 调用**comparing**逻辑实现**玩家的输赢**
-4. 系统其他设计:
-    - Card: 包括`牌色`和`牌数字`, 很明显, 这2个对象都用**枚举**来存储, 该类实现`Comparable`接口作为集合的内部排序
-    - CardSuitEnum: `牌色`, 包括**红心, 黑桃, 草花, 方块**
-    - CardRankEnum: `牌数字`, **2-A**, 其中A最大, 抽象成数字**14**表示
-    - RankingEnum: `牌型`, 如`high card`, `one pair`等10种牌型
-5. 关键设计: 根据**总则**, 抽象出如下2个过程
-    - ranking: 5张牌牌型的解析
-    - comparing: 相同牌型的比较, 比如都是`高牌`, 依次比较最大牌即可
-6. ranking的设计
-    - 使用模板设计模式, 每个`牌型解析器`作为一个单独的类自己实现其解析逻辑, 如`FourOfTheKindRankingImpl`用于检验5张牌是不是`四条`
-    - 每个`解析类`都具有**可插拔**的性质, 全部注册在**门面类RankingFacade**中, 如**题目要求**只要四个规则, 即注册对应的4个解析类即可
-    - 继承结构: `XXXRankingImpl` < `AbstractRanking` < `IRanking`
-7. comparing的设计
-    - 依赖`ranking`的解析结果, 使用`策略模式`取得对应的`比较器`, 比较相同的牌型结果
-    - 继承结构: `XXXComparingImpl` < `AbstractComparing` < `IComparing` < `Comparator<Player>`
-
-#### 代码结构
-- com.alibaba.game.*: 主函数入口
-- com.alibaba.game.texasholdem.*: 基本对象
-- com.alibaba.game.texasholdem.ranking.*: `ranking`的逻辑, 每个实现类具有可插拔的性质, 如要扩展`牌型规则`, 在这里实现具体的`解析类`即可
-- com.alibaba.game.texasholdem.comparing.*: `comparing`的逻辑, 每个实现类具有可插拔的性质, 如要扩展`牌型比较规则`, 在这里实现具体的`比较类`即可
-- TEST: 包含对应类的**单元测试**
-
-#### 其他
-- 支持1副牌(52张)的多个玩家(每个玩家5张牌)
-- TDD
-- 开发的时候系统环境为`jdk7`, 未在7以下的版本运行过
-- 代码风格参考了`阿里巴巴java开发手册`, 但还未读完, 因此不完全体现
-
-#### 思考
-- 之前从来没玩过德州扑克, 所以简单查了下规则才开始写代码. 所以写代码的本质应该是对业务的理解和抽象, 然后在这基础上的扩展
+中文版
+一副扑克有52张牌，每张牌由一个花色和一个数字构成。
+花色为以下四者之一：
+方片 D
+黑桃 S
+红桃 H
+梅花 C
+数字为以下13者之一，且大小顺序如下：
+2, 3, 4, 5, 6, 7, 8, 9, T, J, Q, K, A
+花色是大小无序的，但数字有序，2最小，A最大。
+一手牌有5张。根据花色和数字的不同，其大小按照以下规则决定。
+满足下面规则的手牌会大于满足上面规则的手牌。
+同花顺＞铁支＞葫芦＞同花＞顺子＞三条＞两对＞对子＞散牌
+散牌：
+不符合其他任何规则的五张牌。 比较最大一张牌的大小，如果相同，比较第二大的牌的牌点数，如果五张牌的牌点数都相同，则为平局。
+对子：
+有两张同样大小的牌片。 比较两张大小一样的牌的牌点数，如果相同，依次比较剩余的三张牌大小。若大小都相同，则为平局。
+两对：
+有两个对子牌。 比较大对子的大小，若相同，比较小对子的大小，若还相同，比较单张牌的大小，若还相同，则为平局。
+三条：
+有三张同样大小的牌片。 比较三张大小一样的牌的牌点数大小。
+顺子：
+五张相连的牌。 比较最大的牌点数。若大小都相同，则为平局。
+同花：
+五张牌的花色相同。 按照散排规则比较大小。
+葫芦：
+三条+对子。 比较三张大小一样的牌的牌点数。
+铁支：
+有四张同样大小的牌片。 比较四张大小一样的牌的牌点数。
+同花顺：
+同一种花色的顺子。 比较最大的牌的牌的大小。若大小都相同，则为平局。
+你的工作是为两手牌判断大小。
+例如：
+输入: Black: 2H 3D 5S 9C KD White: 2C 3H 4S 8C AH 输出: White wins - high card: Ace 
+输入: Black: 2H 4S 4C 2D 4H White: 2S 8S AS QS 3S 输出: Black wins - full house
+输入: Black: 2H 3D 5S 9C KD White: 2C 3H 4S 8C KH 输出: Black wins - high card: 9
+输入: Black: 2H 3D 5S 9C KD White: 2D 3H 5C 9S KH 输出: Tie
+English version
+A poker deck contains 52 cards - each card has a suit which is one of clubs, diamonds, hearts, or spades (denoted C, D, H, and S in the input data). 
+Each card also has a value which is one of 2, 3, 4, 5, 6, 7, 8, 9, 10, jack, queen, king, ace (denoted 2, 3, 4, 5, 6, 7, 8, 9, T, J, Q, K, A). 
+For scoring purposes, the suits are unordered while the values are ordered as given above, with 2 being the lowest and ace the highest value.
+A poker hand consists of 5 cards dealt from the deck. Poker hands are ranked by the following partial order from lowest to highest.
+High Card: Hands which do not fit any higher category are ranked by the value of their highest card. If the highest cards have the same value, the hands are ranked by the next highest, and so on.
+Pair: 2 of the 5 cards in the hand have the same value. Hands which both contain a pair are ranked by the value of the cards forming the pair. If these values are the same, the hands are ranked by the values of the cards not forming the pair, in decreasing order.
+Two Pairs: The hand contains 2 different pairs. Hands which both contain 2 pairs are ranked by the value of their highest pair. Hands with the same highest pair are ranked by the value of their other pair. If these values are the same the hands are ranked by the value of the remaining card.
+Three of a Kind: Three of the cards in the hand have the same value. Hands which both contain three of a kind are ranked by the value of the 3 cards.
+Straight: Hand contains 5 cards with consecutive values. Hands which both contain a straight are ranked by their highest card.
+Flush: Hand contains 5 cards of the same suit. Hands which are both flushes are ranked using the rules for High Card.
+Full House: 3 cards of the same value, with the remaining 2 cards forming a pair. Ranked by the value of the 3 cards.
+Four of a kind: 4 cards with the same value. Ranked by the value of the 4 cards.
+Straight flush: 5 cards of the same suit with consecutive values. Ranked by the highest card in the hand.
+Your job is to rank pairs of poker hands and to indicate which, if either, has a higher rank.
+Examples:
+Input: Black: 2H 3D 5S 9C KD White: 2C 3H 4S 8C AH Output: White wins - high card: Ace 
+Input: Black: 2H 4S 4C 2D 4H White: 2S 8S AS QS 3S Output: Black wins - full house
+Input: Black: 2H 3D 5S 9C KD White: 2C 3H 4S 8C KH Output: Black wins - high card: 9
+Input: Black: 2H 3D 5S 9C KD White: 2D 3H 5C 9S KH Output: Tie
